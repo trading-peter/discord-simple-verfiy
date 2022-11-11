@@ -1,9 +1,7 @@
 version: "3"
 services:
   mongodb:
-    container_name: chub-mongodb
-    image: mongo:latest
-    ports:
-      - "127.0.0.1:27017:27017"
+    container_name: simple_verify_bot
+    image: simple_verify_bot:latest
     volumes:
-      - ./_mongo/data:/data/db
+      - ./config.yml:/data/config.yml
