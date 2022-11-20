@@ -1,6 +1,6 @@
 version: "3"
 services:
-  mongodb:
+  app:
     container_name: simple_verify_bot
     image: simple_verify_bot:latest
     volumes:
