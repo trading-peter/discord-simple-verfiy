@@ -16,6 +16,7 @@ type cfgType struct {
 	Token         string `yaml:"token"`
 	VerifyRoleID  int    `yaml:"verify_role_id"`
 	VerifyChannel string `yaml:"verify_channel"`
+	Message       string `yaml:"message"`
 }
 
 var cfg cfgType = cfgType{}
@@ -39,18 +40,16 @@ func main() {
 
 	commands := []*discordgo.ApplicationCommand{
 		{
-			Name: "mass-assign",
-			// All commands and options must have a description
-			// Commands/options without description will fail the registration
-			// of the command.
+			Name:        "mass-assign",
 			Description: "Assigns the verified role to all existing users",
 		},
 		{
-			Name: "setup-msg",
-			// All commands and options must have a description
-			// Commands/options without description will fail the registration
-			// of the command.
+			Name:        "setup-msg",
 			Description: "Send the verification message that visitors have to react to",
+		},
+		{
+			Name:        "update-msg",
+			Description: "Update the verification message that visitors have to react to",
 		},
 	}
 
@@ -101,10 +100,31 @@ func main() {
 			golog.Infof("Assigned role to %d/%d users", c, f)
 		},
 		"setup-msg": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			_, err := s.ChannelMessageSend(cfg.VerifyChannel, "Click the 👍 to get verified")
+			_, err := s.ChannelMessageSend(cfg.VerifyChannel, cfg.Message)
 
 			if err != nil {
 				golog.Error(err)
+			}
+
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "☑",
+				},
+			})
+		},
+		"update-msg": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			list, err := s.ChannelMessages(cfg.VerifyChannel, 100, "", "", "")
+
+			if err != nil {
+				golog.Error(err)
+			}
+
+			for i := range list {
+				if list[i].Author.ID == s.State.User.ID {
+					s.ChannelMessageEdit(cfg.VerifyChannel, list[i].ID, cfg.Message)
+					break
+				}
 			}
 
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
